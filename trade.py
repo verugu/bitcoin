@@ -1,9 +1,23 @@
+import multiprocessing
+import numpy as np
+import pandas as pd
 
 
+class multi:
+    def __init__(self):
+        t = pd.DatetimeIndex(np.arange(10, dtype='datetime64[s]'))
+        with multiprocessing.Pool(processes=6) as pool:
+            features_temp = pool.map(self.make_features, t)
+    
+        self.feature = features_temp       
+
+    def make_features(self, time):
+        return time+pd.Timedelta(days=1)
 
 
-
-
+def main():
+    features_temp = multi()
+    print(features_temp.feature)
 
 if __name__ == '__main__':
 
@@ -31,5 +45,9 @@ if __name__ == '__main__':
     #過去数件の約定の内容。
 
     #以上、一番大変なのはlstmモデルですね...。
+    
+    main()
 
-    print(0)
+
+    
+

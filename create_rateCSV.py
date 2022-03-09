@@ -1,9 +1,10 @@
 import ast
-import json
 import requests
 import pandas as pd
 import os
 import multiprocessing
+
+import datetime
 
 
 months = list(range(1, 13)) #月
@@ -72,10 +73,41 @@ class create_rateCSV:
 
 
     
-    #現在の2021年（もうすぐ2022年）について、現在までのレートを埋めて更新する。
+    #現在の2021年（もうすぐ2022年）について、現在までのレートを埋めて更新する。現在の年について作成する時はこっち。
+    #updateというより、現在年は作成が特殊になるので変えてるだけ。
     def update_csv(self):
-        return 0
-    
+        os.chdir('d:/workSpace/virtual_coin/statics/'+self.coin+'/')
+        if not os.path.exists(str(self.year)):
+            os.mkdir(str(self.year))
+        
+        csv_dir = str(self.year) + '/'
+        csv_path = csv_dir+'/'+str(self.year)+'_rate.csv'
+
+        df_rates = pd.DataFrame(columns=['utc_timestamp', 'rate'])
+        
+        #現在時刻までのデータを作成する。utc時間に合わせるので-9時間
+        now = pd.Timestamp(datetime.datetime.now()) - pd.Timedelta(hours=9)
+
+        delta = pd.Timedelta(minutes=5)
+        time_temp = pd.Timestamp(year=2022, month=1, day=1)
+
+        while time_temp <= now:
+            month = time_temp.month
+            day = time_temp.day
+            hour = time_temp.hour
+            minute = time_temp.minute
+            moment = 'T'+str(hour).zfill(2)+':'+str(minute).zfill(2)+':00:000Z'
+            time =  str(self.year)+'-'+str(month).zfill(2)+'-'+str(day).zfill(2)+moment
+
+            rate_data = requests.get('https://coincheck.com/ja/exchange/rates/search', params={'pair':self.coin, 'time':time})
+            rate_dict = ast.literal_eval(rate_data.text)
+            rate = float(rate_dict['rate'])
+
+            df_rates = df_rates.append({'utc_timestamp':time,'rate':rate}, ignore_index=True)
+            
+            time_temp += delta
+        
+        df_rates.to_csv(csv_path, index=False)
     
 
 
